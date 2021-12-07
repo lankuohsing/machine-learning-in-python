@@ -9,6 +9,7 @@ import numpy as np
 import torch.utils.data as Data
 import torch
 from collections import OrderedDict
+from torchsummary import summary
 # In[]
 data1=[]
 labels1=[]
@@ -80,3 +81,5 @@ for epoch in range(epochs):
           format(test_loss,correct,
                  len(test_loader.dataset),
                  100.*correct/len(test_loader.dataset)))
+# In[]
+summary(softmax_regression,(1,2))
