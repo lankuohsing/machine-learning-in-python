@@ -11,33 +11,47 @@ import torch
 from collections import OrderedDict
 from torchsummary import summary
 # In[]
-data1=[]
-labels1=[]
-data2=[]
-labels2=[]
-with open("./dataset/4_class_data_2d.txt",'r',encoding="UTF-8") as rf:
+train1_data=[]
+train1_labels=[]
+test1_data=[]
+test1_labels=[]
+
+with open("./dataset/train1_dataset.txt",'r',encoding="UTF-8") as rf:
     for line in rf:
         split_list=line.strip().split(" ")
         x=float(split_list[0])
         y=float(split_list[1])
         label=int(split_list[2])
-        if (x-2)**2+(y-2)**2<=0.5**2:
-            data2.append([x,y])
-            labels2.append([label-1])
-        else:
-            data1.append([x,y])
-            labels1.append([label-1])
+        if True:
+            train1_data.append([x,y])
+            train1_labels.append([label])
+with open("./dataset/test1_dataset.txt",'r',encoding="UTF-8") as rf:
+    for line in rf:
+        split_list=line.strip().split(" ")
+        x=float(split_list[0])
+        y=float(split_list[1])
+        label=int(split_list[2])
+        if True:
+            test1_data.append([x,y])
+            test1_labels.append([label])
 # In[]
 class_num=4
-features=torch.tensor(data1,dtype=torch.float)
-labels=torch.tensor(labels1,dtype=torch.long)
-one_hot_labels=torch.zeros(len(labels),class_num).scatter_(1,labels,1)
+train1_features=torch.tensor(train1_data,dtype=torch.float)
+train1_labels=torch.tensor(train1_labels,dtype=torch.long)
+one_hot_labels=torch.zeros(len(train1_labels),class_num).scatter_(1,train1_labels,1)
 batch_size=64
 # 将训练数据的特征和标签组合
-dataset=Data.TensorDataset(features,one_hot_labels)
+dataset=Data.TensorDataset(train1_features,one_hot_labels)
 # 随机读取小批量
 train_loader=Data.DataLoader(dataset,batch_size,shuffle=True)
-test_loader=train_loader
+
+test1_features=torch.tensor(test1_data,dtype=torch.float)
+test1_labels=torch.tensor(test1_labels,dtype=torch.long)
+one_hot_labels=torch.zeros(len(test1_labels),class_num).scatter_(1,test1_labels,1)
+batch_size=64
+# 将训练数据的特征和标签组合
+dataset=Data.TensorDataset(test1_features,one_hot_labels)
+test_loader=Data.DataLoader(dataset,batch_size,shuffle=True)
 epochs=100
 # In[]
 num_inputs=2
@@ -62,7 +76,7 @@ torch.nn.init.normal_(mlp_model.linear2.weight,mean=0,std=0.01)
 torch.nn.init.constant_(mlp_model.linear2.bias,val=0.01)
 criterion=torch.nn.CrossEntropyLoss()
 optimizer=torch.optim.Adam(mlp_model.parameters(),lr=0.03)
-
+# In[]
 for epoch in range(epochs):
     for batch_idx,(feature_in_on_batch,label_in_one_batch) in enumerate(train_loader):
         logits=mlp_model(feature_in_on_batch)
@@ -91,3 +105,13 @@ summary(mlp_model,(1,2))
 
 # In[]
 torch.save(mlp_model, "./model/mlp.model")
+
+# In[]
+state = {'model': mlp_model.state_dict(), 'optimizer': optimizer.state_dict(), 'epoch': epoch}
+torch.save(state, "./model/mlp_dict.model")
+
+# In[]
+checkpoint = torch.load("./model/mlp_dict.model")
+mlp_model.load_state_dict(checkpoint['model'])
+optimizer.load_state_dict(checkpoint['optimizer'])
+start_epoch = checkpoint['epoch']
