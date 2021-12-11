@@ -75,7 +75,6 @@ correct=0
 list_data_prob_label=[]
 for data,target in train1_loader:
     logits=mlp_model(data)
-
     softmax=torch.nn.Softmax()
     probs=softmax(logits)
     list_data_prob_label.append((data[0],probs[0],target[0]))
