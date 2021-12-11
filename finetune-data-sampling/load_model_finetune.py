@@ -132,4 +132,4 @@ print("\nTest set: Average loss: {:.4f}, Accuracy: {}/{}({:.3f}%)".
              len(test1_loader.dataset),
              100.*correct/len(test1_loader.dataset)))
 # In[]
-summary(mlp_model,(1,2))
+#summary(mlp_model,(1,2))
