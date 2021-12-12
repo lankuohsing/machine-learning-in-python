@@ -7,9 +7,10 @@ Created on Fri Dec 10 20:08:32 2021
 import numpy as np
 import torch.utils.data as Data
 import torch
-from collections import OrderedDict
+from collections import OrderedDict,defaultdict
 from torchsummary import summary
-
+import json
+# In[]
 
 mlp_model=torch.load( "./model/mlp.model")
 
@@ -88,4 +89,17 @@ print("\nTrain1 set: Average loss: {:.4f}, Accuracy: {}/{}({:.3f}%)".
              100.*correct/len(train1_loader.dataset)))
 # In[]
 #summary(mlp_model,(1,2))
-print(list_data_prob_label[0])
+print(torch.nonzero(list_data_prob_label[0][2]).numpy()[0][0])
+
+# In[]
+dict_class_samples=defaultdict(list)
+for index, data in enumerate(list_data_prob_label):
+    label=torch.nonzero(data[2]).numpy()[0][0]
+    dict_class_samples[str(label)].append(str(data[0].numpy()[0])+" "+str(data[0].numpy()[1])+" "+
+                      str(data[1].detach().numpy()[label]-data[1].detach().numpy()[0])+" "+
+                      str(data[1].detach().numpy()[label]-data[1].detach().numpy()[1])+" "+
+                      str(data[1].detach().numpy()[label]-data[1].detach().numpy()[2])+" "+
+                      str(data[1].detach().numpy()[label]-data[1].detach().numpy()[3]))
+# In[]
+with open("./dataset/dict_class_samples.json", 'w',encoding='UTF-8') as wf:
+    json.dump(dict_class_samples, wf,indent=4,ensure_ascii=False)
