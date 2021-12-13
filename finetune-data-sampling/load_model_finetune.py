@@ -21,6 +21,8 @@ train2_data=[]
 train2_labels=[]
 test1_data=[]
 test1_labels=[]
+weak_data=[]
+weak_labels=[]
 with open("./dataset/train2_dataset.txt",'r',encoding="UTF-8") as rf:
     for line in rf:
         split_list=line.strip().split(" ")
@@ -29,6 +31,14 @@ with open("./dataset/train2_dataset.txt",'r',encoding="UTF-8") as rf:
         label=int(split_list[2])
         train2_data.append([x,y])
         train2_labels.append([label])
+with open("./dataset/weak_samples.txt",'r',encoding="UTF-8") as rf:
+    for line in rf:
+        split_list=line.strip().split(" ")
+        x=float(split_list[0])
+        y=float(split_list[1])
+        label=int(split_list[2])
+        weak_data.append([x,y])
+        weak_labels.append([label])
 with open("./dataset/test2_dataset.txt",'r',encoding="UTF-8") as rf:
     for line in rf:
         split_list=line.strip().split(" ")
@@ -49,8 +59,8 @@ with open("./dataset/test1_dataset.txt",'r',encoding="UTF-8") as rf:
 # In[]
 class_num=4
 train2_features=torch.tensor(train2_data,dtype=torch.float)
-train2_labels=torch.tensor(train2_labels,dtype=torch.long)
-one_hot_labels=torch.zeros(len(train2_labels),class_num).scatter_(1,train2_labels,1)
+train2_targets=torch.tensor(train2_labels,dtype=torch.long)
+one_hot_labels=torch.zeros(len(train2_targets),class_num).scatter_(1,train2_targets,1)
 batch_size=64
 # 将训练数据的特征和标签组合
 train2_dataset=Data.TensorDataset(train2_features,one_hot_labels)
@@ -114,7 +124,7 @@ for data,target in test2_loader:
     pred=logits.data.max(1)[1]
     correct+=pred.eq(torch.nonzero(target.data)[:,1]).sum()
 test_loss/=len(test2_loader.dataset)
-print("\nTest set: Average loss: {:.4f}, Accuracy: {}/{}({:.3f}%)".
+print("\nTest2 set: Average loss: {:.4f}, Accuracy: {}/{}({:.3f}%)".
       format(test_loss,correct,
              len(test2_loader.dataset),
              100.*correct/len(test2_loader.dataset)))
@@ -127,9 +137,85 @@ for data,target in test1_loader:
     pred=logits.data.max(1)[1]
     correct+=pred.eq(torch.nonzero(target.data)[:,1]).sum()
 test_loss/=len(test1_loader.dataset)
-print("\nTest set: Average loss: {:.4f}, Accuracy: {}/{}({:.3f}%)".
+print("\nTest1 set: Average loss: {:.4f}, Accuracy: {}/{}({:.3f}%)".
       format(test_loss,correct,
              len(test1_loader.dataset),
              100.*correct/len(test1_loader.dataset)))
 # In[]
 #summary(mlp_model,(1,2))
+
+# In[]
+class_num=4
+weak_features=torch.tensor(weak_data+train2_data,dtype=torch.float)
+weak_targets=torch.tensor(weak_labels+train2_labels,dtype=torch.long)
+one_hot_labels=torch.zeros(len(weak_targets),class_num).scatter_(1,weak_targets,1)
+batch_size=64
+# 将训练数据的特征和标签组合
+weak_dataset=Data.TensorDataset(weak_features,one_hot_labels)
+# 随机读取小批量
+train_loader=Data.DataLoader(weak_dataset,batch_size,shuffle=True)
+test2_features=torch.tensor(test2_data,dtype=torch.float)
+test2_labels=torch.tensor(test2_labels,dtype=torch.long)
+one_hot_labels=torch.zeros(len(test2_labels),class_num).scatter_(1,test2_labels,1)
+batch_size=64
+
+num_inputs=2
+num_outputs=4
+mlp_model=torch.load( "./model/mlp.model")
+mlp_model.linear1.weight.requires_grad = False
+mlp_model.linear1.bias.requires_grad = False
+criterion=torch.nn.CrossEntropyLoss()
+optimizer=torch.optim.Adam(filter(lambda p: p.requires_grad, mlp_model.parameters()),lr=0.03)
+
+# In[]
+epochs=80
+for epoch in range(epochs):
+    for batch_idx,(feature_in_on_batch,label_in_one_batch) in enumerate(train_loader):
+        logits=mlp_model(feature_in_on_batch)
+        loss=criterion(logits,label_in_one_batch)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+#        if batch_idx % 100==0:
+#            print("Train Epoch: {} [{}/{}({:0f}%)]\tLoss: {:6f}".format(epoch,batch_idx*len(feature_in_on_batch),len(train_loader.dataset),100.*batch_idx/len(train_loader),loss.item()))
+
+    test_loss=0
+    correct=0
+    for data,target in test2_loader:
+        logits=mlp_model(data)
+        test_loss+=criterion(logits,target).item()
+        pred=logits.data.max(1)[1]
+        correct+=pred.eq(torch.nonzero(target.data)[:,1]).sum()
+    test_loss/=len(test2_loader.dataset)
+    print("\nEpoch: {}".format(epoch))
+    print("\nTest set: Average loss: {:.4f}, Accuracy: {}/{}({:.3f}%)".
+          format(test_loss,correct,
+                 len(test2_loader.dataset),
+                 100.*correct/len(test2_loader.dataset)))
+
+# In[]
+test_loss=0
+correct=0
+for data,target in test2_loader:
+    logits=mlp_model(data)
+    test_loss+=criterion(logits,target).item()
+    pred=logits.data.max(1)[1]
+    correct+=pred.eq(torch.nonzero(target.data)[:,1]).sum()
+test_loss/=len(test2_loader.dataset)
+print("\nTest2 set: Average loss: {:.4f}, Accuracy: {}/{}({:.3f}%)".
+      format(test_loss,correct,
+             len(test2_loader.dataset),
+             100.*correct/len(test2_loader.dataset)))
+# In[]
+test_loss=0
+correct=0
+for data,target in test1_loader:
+    logits=mlp_model(data)
+    test_loss+=criterion(logits,target).item()
+    pred=logits.data.max(1)[1]
+    correct+=pred.eq(torch.nonzero(target.data)[:,1]).sum()
+test_loss/=len(test1_loader.dataset)
+print("\nTest1 set: Average loss: {:.4f}, Accuracy: {}/{}({:.3f}%)".
+      format(test_loss,correct,
+             len(test1_loader.dataset),
+             100.*correct/len(test1_loader.dataset)))
