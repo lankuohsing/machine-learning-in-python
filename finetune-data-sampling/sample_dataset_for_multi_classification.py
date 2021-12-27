@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 import math
-
+boundary_samples=[]
 #right
 def GenerateDatasetInCycle(
         points_in_rectangle=None,
@@ -44,44 +44,65 @@ def GenerateDatasetInCycle(
         if label==1:
             if x>=2.0 and x<=3.0-gap:
                 if (x-center_x)**2+(y-center_y)**2<=(radius-gap)**2 or  y<=1:
+                    if ((x-center_x)**2+(y-center_y)**2>=(radius-gap-gap*0.9)**2 and y>=1) or  x>=3.0-gap-gap*0.9:
+                        boundary_samples.append((x,y,label))
                     dataset.append((x,y,label))
                     plt.plot(x, y, '.', color = point_color)
+#                    for i in range(0,10):
+#                        if x<=3.0-gap*i:
+#                            for j in range(0,100*i):
+#                                dataset.append((x,y,label))
+#                                plt.plot(x, y, '.', color = point_color) todo
                     continue
             if x<=2.0:
                 if y<=1.0-gap or y<=2.0 and x>=1.0 and (x-1.0)**2+(y-2.0)**2>=(radius+gap)**2:
+                    if (y>=1.0-gap-gap*0.9 and x<=1.0) or ((x-1.0)**2+(y-2.0)**2<=(radius+gap+gap*0.9)**2 and x>=1.0):
+                        boundary_samples.append((x,y,label))
                     dataset.append((x,y,label))
                     plt.plot(x, y, '.', color = point_color)
                     continue
         if label==2:
             if y>=1.0+gap and y<=2.0:
                 if (x-center_x)**2+(y-center_y)**2<=(radius-gap)**2 or x<=1.0:
+                    if (y<=1.0+gap+gap*0.9) or ((x-center_x)**2+(y-center_y)**2>=(radius-gap-gap*0.9)**2 and x>=1):
+                        boundary_samples.append((x,y,label))
                     dataset.append((x,y,label))
                     plt.plot(x, y, '.', color = point_color)
                     continue
             if y>=2.0:
                 if x<=1.0-gap or x<=2.0 and y<=3.0 and (x-2.0)**2+(y-3.0)**2>=(radius+gap)**2:
+                    if (x>=1.0-gap-gap*0.9 and y>=3) or (x-2.0)**2+(y-3.0)**2<=(radius+gap+gap*0.9)**2:
+                        boundary_samples.append((x,y,label))
                     dataset.append((x,y,label))
                     plt.plot(x, y, '.', color = point_color)
                     continue
         if label==3:
             if x>=1.0+gap and x<=2.0:
                 if y>=3.0+gap or y>=2.0 and (x-center_x)**2+(y-center_y)**2<=(radius-gap)**2:
+                    if (x<=1.0+gap+gap*0.9) or ((x-center_x)**2+(y-center_y)**2>=(radius-gap-gap*0.9)**2 and y<=3):
+                        boundary_samples.append((x,y,label))
                     dataset.append((x,y,label))
                     plt.plot(x, y, '.', color = point_color)
                     continue
             if x>=2.0:
                 if y>=3.0+gap or y>=2.0 and x<=3.0 and (x-3.0)**2+(y-2.0)**2>=(radius+gap)**2:
+                    if (y<=3.0+gap+gap*0.9 and x>=3) or ((x-3.0)**2+(y-2.0)**2<=(radius+gap+gap*0.9)**2):
+                        boundary_samples.append((x,y,label))
                     dataset.append((x,y,label))
                     plt.plot(x, y, '.', color = point_color)
                     continue
         if label==4:
             if y>=2.0 and y<=3.0-gap:
-                if x>=3.0+gap or x>=2.0 and (x-center_x)**2+(y-center_y)**2<=(radius-gap)**2:
+                if x>=3.0 or x>=2.0 and (x-center_x)**2+(y-center_y)**2<=(radius-gap)**2:
+                    if y>=3.0-gap-gap*0.9 or ((x-center_x)**2+(y-center_y)**2>=(radius-gap-gap*0.9)**2 and x<=3):
+                        boundary_samples.append((x,y,label))
                     dataset.append((x,y,label))
                     plt.plot(x, y, '.', color = point_color)
                     continue
             if y<=2.0:
                 if x>=3.0+gap or x>=2.0 and y>=1.0 and (x-2.0)**2+(y-1.0)**2>=(radius+gap)**2:
+                    if (x<=3.0+gap+gap*0.9 and y<=1) or ((x-2.0)**2+(y-1.0)**2<=(radius+gap+gap*0.9)**2):
+                        boundary_samples.append((x,y,label))
                     dataset.append((x,y,label))
                     plt.plot(x, y, '.', color = point_color)
                     continue
@@ -94,7 +115,7 @@ if __name__=="__main__":
     plt.title("circle")
     plt.ylim(0,4)
     plt.xlim(0,4)
-    point_num=10000
+    point_num=6000
     points_in_rectangle=[]
     for i in range(0,point_num):
         x=random.uniform(0,4)
@@ -176,3 +197,18 @@ if __name__=="__main__":
             wf.write(str(data[0])+" "+str(data[1])+" "+str(data[2])+"\n")
         for data in dataset_4:
             wf.write(str(data[0])+" "+str(data[1])+" "+str(data[2])+"\n")
+    # In[]
+    plt.figure(figsize=(6,6))
+    plt.title("boundary samples")
+    plt.ylim(0,4)
+    plt.xlim(0,4)
+    colors=["green","blue","red","yellow"]
+    with open("./dataset/4_class_boundary_samples.txt",'w',encoding="UTF-8") as wf:
+        for point in boundary_samples:
+            x=point[0]
+            y=point[1]
+            label=point[2]
+            plt.plot(x, y, '.', color = colors[label-1])
+            wf.write(str(x)+" "+str(y)+" "+str(label)+"\n")
+        plt.savefig("./figures/4_class_boundary_samples.png")
+        plt.show()

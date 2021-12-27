@@ -16,7 +16,7 @@ train1_labels=[]
 test1_data=[]
 test1_labels=[]
 
-with open("./dataset/train1_dataset.txt",'r',encoding="UTF-8") as rf:
+with open("./dataset/4_class_boundary_samples.txt",'r',encoding="UTF-8") as rf:
     for line in rf:
         split_list=line.strip().split(" ")
         x=float(split_list[0])
@@ -24,8 +24,8 @@ with open("./dataset/train1_dataset.txt",'r',encoding="UTF-8") as rf:
         label=int(split_list[2])
         if True:
             train1_data.append([x,y])
-            train1_labels.append([label])
-with open("./dataset/test1_dataset.txt",'r',encoding="UTF-8") as rf:
+            train1_labels.append([label-1])
+with open("./dataset/test_dataset.txt",'r',encoding="UTF-8") as rf:
     for line in rf:
         split_list=line.strip().split(" ")
         x=float(split_list[0])
