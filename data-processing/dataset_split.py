@@ -8,29 +8,7 @@ from collections import defaultdict
 import random
 import logging
 from sklearn.model_selection import StratifiedKFold, KFold
-# In[]
-"""位置0，1，2，3为第一个label，4，5，6，为第二个label"""
-X_list=[]
-y_list=[]
-for i in range(0,100):
-    X_list.append([i+1]*10)
-    y_temp=[0]*7
-    y_temp[i%4]=1
-    y_temp[(i)%2+4]=1
-    y_list.append(y_temp.copy())
-i=100
-X_list.append([i+1]*10)
-y_temp=[0]*7
-y_temp[0]=1
-y_temp[-1]=1
-y_list.append(y_temp.copy())
 
-i=101
-X_list.append([i+1]*10)
-y_temp=[0]*7
-y_temp[0]=1
-y_temp[-1]=1
-y_list.append(y_temp.copy())
 # In[]
 
 class MultiClassSplitter(object):
