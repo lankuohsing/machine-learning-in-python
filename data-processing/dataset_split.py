@@ -7,7 +7,7 @@ Created on Tue Apr 19 12:03:49 2022
 from collections import defaultdict
 import random
 import logging
-from sklearn.model_selection import StratifiedKFold, KFold
+from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
 
 # In[]
 
