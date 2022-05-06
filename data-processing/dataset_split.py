@@ -16,7 +16,7 @@ class MultiClassSplitter(object):
         self.X_list=X_list
         self.y_list=y_list
         self.multi_labels=multi_labels
-        self.dict_multilabel_num, self.dict_multilabel_samples=self.get_nums_samples_dict( X_list, y_list)
+        self.dict_multilabel_num, self.dict_multilabel_samples=self.get_nums_samples_dict( X_list, y_list, multi_labels)
 
 
     def get_nums_samples_dict(self, X_list, y_list,multi_labels=None):
@@ -67,38 +67,7 @@ class MultiClassSplitter(object):
             X_folds.append(X_fold_temp)
             y_folds.append(y_fold_temp)
         return X_folds, y_folds
-    def stratified_k_sampling(self, n_splits, drop_minority=False, random_state=None):
-        major_labels=[]
-        minor_labels=[]
-        for label, num in self.dict_multilabel_num.items():
-            if num < n_splits:
-                logging.warning("Label {} only has {} samples!".format(label,num))
-                minor_labels.append(label)
-            else:
-                major_labels.append(label)
-        if not drop_minority:#保留所有类别样本
-            X_list=self.X_list
-            y_list=self.y_list
-        else:#丢弃样本数小于n_splits的类别
-            for label in minor_labels:
-                logging.warning("Dropping label {}!".format(label))
-            X_list=[]
-            y_list=[]
-            for label in major_labels:
-                X_list.extend(self.dict_multilabel_samples[label]["X"])
-                y_list.extend(self.dict_multilabel_samples[label]["y"])
-        X_folds=[]
-        y_folds=[]
-        skf = StratifiedKFold(n_splits=n_splits,random_state=random_state)
-        for train_index, test_index in skf.split(X_list, y_list):
-            X_fold_temp=[]
-            y_fold_temp=[]
-            for index in train_index:
-                X_fold_temp.append(X_list[index])
-                y_fold_temp.append(y_list[index])
-            X_folds.append(X_fold_temp)
-            y_folds.append(y_fold_temp)
-        return X_folds, y_folds
+
     def stratified_train_test(self, n_splits=1, *, test_size=0.1, train_size=None, random_state=None):
         major_labels=[]
         minor_labels=[]
@@ -151,6 +120,38 @@ class MultiClassSplitter(object):
                 multi_label_trains.append(multi_label_train_temp)
                 multi_label_tests.append(multi_label_test_temp)
         return X_trains, y_trains, multi_label_trains, X_tests, y_tests, multi_label_tests
+    def stratified_k_sampling(self, n_splits, drop_minority=False, random_state=None):
+        major_labels=[]
+        minor_labels=[]
+        for label, num in self.dict_multilabel_num.items():
+            if num < n_splits:
+                logging.warning("Label {} only has {} samples!".format(label,num))
+                minor_labels.append(label)
+            else:
+                major_labels.append(label)
+        if not drop_minority:#保留所有类别样本
+            X_list=self.X_list
+            y_list=self.y_list
+        else:#丢弃样本数小于n_splits的类别
+            for label in minor_labels:
+                logging.warning("Dropping label {}!".format(label))
+            X_list=[]
+            y_list=[]
+            for label in major_labels:
+                X_list.extend(self.dict_multilabel_samples[label]["X"])
+                y_list.extend(self.dict_multilabel_samples[label]["y"])
+        X_folds=[]
+        y_folds=[]
+        skf = StratifiedKFold(n_splits=n_splits,random_state=random_state)
+        for train_index, test_index in skf.split(X_list, y_list):
+            X_fold_temp=[]
+            y_fold_temp=[]
+            for index in train_index:
+                X_fold_temp.append(X_list[index])
+                y_fold_temp.append(y_list[index])
+            X_folds.append(X_fold_temp)
+            y_folds.append(y_fold_temp)
+        return X_folds, y_folds
 # In[]
 if __name__=="__main__":
 
