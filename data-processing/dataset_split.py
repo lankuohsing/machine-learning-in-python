@@ -123,6 +123,7 @@ class MultiClassSplitter(object):
     def stratified_k_sampling(self, n_splits, drop_minority=False, random_state=None):
         major_labels=[]
         minor_labels=[]
+        multi_labels=[]
         for label, num in self.dict_multilabel_num.items():
             if num < n_splits:
                 logging.warning("Label {} only has {} samples!".format(label,num))
@@ -132,6 +133,7 @@ class MultiClassSplitter(object):
         if not drop_minority:#保留所有类别样本
             X_list=self.X_list
             y_list=self.y_list
+            multi_labels=self.multi_labels
         else:#丢弃样本数小于n_splits的类别
             for label in minor_labels:
                 logging.warning("Dropping label {}!".format(label))
@@ -140,31 +142,54 @@ class MultiClassSplitter(object):
             for label in major_labels:
                 X_list.extend(self.dict_multilabel_samples[label]["X"])
                 y_list.extend(self.dict_multilabel_samples[label]["y"])
+                if self.multi_labels is not None:
+                    multi_labels.extend(self.dict_multilabel_samples[label]["multi_label"])
+
+
         X_folds=[]
         y_folds=[]
+        multi_label_folds=[]
+        print("---------------")
+        print(multi_labels)
         skf = StratifiedKFold(n_splits=n_splits,random_state=random_state)
         for train_index, test_index in skf.split(X_list, y_list):
             X_fold_temp=[]
             y_fold_temp=[]
+            multi_label_fold_temp=[]
             for index in train_index:
                 X_fold_temp.append(X_list[index])
                 y_fold_temp.append(y_list[index])
+                if self.multi_labels is not None:
+                    multi_label_fold_temp.append(multi_labels[index])
             X_folds.append(X_fold_temp)
             y_folds.append(y_fold_temp)
-        return X_folds, y_folds
+            multi_label_folds.append(multi_label_fold_temp)
+        return X_folds, y_folds,multi_label_folds
 # In[]
 if __name__=="__main__":
 
     X=[[1],[2],[3],[4],[5],[6],[7],[8],[9],[10]]
     y=[0,0,0,0,0,0,0,0,1,1]
-
-    splitter=MultiClassSplitter(X,y)
-    X_folds, y_folds=splitter.stratified_k_sampling(3, drop_minority=False)
+    multi_labels=[
+            [0,0,1],
+            [0,1,1],
+            [1,0,1],
+            [1,1,0],
+            [1,0,1],
+            [0,0,0],
+            [0,0,1],
+            [1,0,0],
+            [1,1,1],
+            [0,1,1],
+            ]
+    splitter=MultiClassSplitter(X,y,multi_labels=multi_labels)
+    X_folds, y_folds,multi_label_folds=splitter.stratified_k_sampling(3, drop_minority=False)
     print(X_folds)
     print(y_folds)
+    print(multi_label_folds)
     X=[[1, 2], [3, 4], [5, 6], [7, 8], [9, 10], [11, 12]]
     y=[0, 0, 0, 0, 1, 1]
     splitter=MultiClassSplitter(X,y)
     X_trains, y_trains, multi_label_trains, X_tests, y_tests, multi_label_tests=splitter.stratified_train_test( test_size=0.25, random_state=0)
-    print(X_trains, y_trains, multi_label_trains, X_tests, y_tests, multi_label_tests)
+#    print(X_trains, y_trains, multi_label_trains, X_tests, y_tests, multi_label_tests)
 
