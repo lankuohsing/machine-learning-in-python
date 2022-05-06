@@ -12,13 +12,14 @@ from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
 # In[]
 
 class MultiClassSplitter(object):
-    def __init__(self, X_list=None, y_list=None):
+    def __init__(self, X_list=None, y_list=None, multi_labels=None):
         self.X_list=X_list
         self.y_list=y_list
+        self.multi_labels=multi_labels
         self.dict_multilabel_num, self.dict_multilabel_samples=self.get_nums_samples_dict( X_list, y_list)
 
 
-    def get_nums_samples_dict(self, X_list, y_list):
+    def get_nums_samples_dict(self, X_list, y_list,multi_labels=None):
         """
         X_list:[feature1,feture2,...]
         y_list:[label1, label2, ...]
@@ -30,6 +31,8 @@ class MultiClassSplitter(object):
             dict_multilabel_num[label]+=1
             dict_multilabel_samples[label]["X"].append(X_list[index])
             dict_multilabel_samples[label]["y"].append(label)
+            if multi_labels is not None:
+                dict_multilabel_samples[label]["multi_label"].append(multi_labels[index])
         return dict_multilabel_num, dict_multilabel_samples
 
     def stratified_k_fold(self, n_splits, drop_minority=False, random_state=None):
@@ -109,31 +112,45 @@ class MultiClassSplitter(object):
             logging.warning("Dropping label {}!".format(label))
         X_list=[]
         y_list=[]
+        multi_labels=[]
         for label in major_labels:
             X_list.extend(self.dict_multilabel_samples[label]["X"])
             y_list.extend(self.dict_multilabel_samples[label]["y"])
+            if self.multi_labels is not None:
+                multi_labels.extend(self.dict_multilabel_samples[label]["multi_label"])
         sss = StratifiedShuffleSplit(n_splits=n_splits, test_size=test_size,train_size=train_size, random_state=random_state)
-        sss.get_n_splits(X, y)
+        sss.get_n_splits(X_list, y_list)
         X_trains=[]
         y_trains=[]
+        multi_label_trains=[]
         X_tests=[]
         y_tests=[]
+        multi_label_tests=[]
         for train_index, test_index in sss.split(X_list, y_list):
             X_train_temp=[]
             y_train_temp=[]
+            multi_label_train_temp=[]
             X_test_temp=[]
             y_test_temp=[]
+            multi_label_test_temp=[]
             for index in test_index:
                 X_test_temp.append(X_list[index])
                 y_test_temp.append(y_list[index])
+                if self.multi_labels is not None:
+                    multi_label_test_temp.append(multi_labels[index])
             for index in train_index:
                 X_train_temp.append(X_list[index])
                 y_train_temp.append(y_list[index])
+                if self.multi_labels is not None:
+                    multi_label_train_temp.append(multi_labels[index])
             X_trains.append(X_train_temp)
             y_trains.append(y_train_temp)
             X_tests.append(X_test_temp)
             y_tests.append(y_test_temp)
-        return X_trains, y_trains, X_tests, y_tests
+            if self.multi_labels is not None:
+                multi_label_trains.append(multi_label_train_temp)
+                multi_label_tests.append(multi_label_test_temp)
+        return X_trains, y_trains, multi_label_trains, X_tests, y_tests, multi_label_tests
 # In[]
 if __name__=="__main__":
 
@@ -147,6 +164,6 @@ if __name__=="__main__":
     X=[[1, 2], [3, 4], [5, 6], [7, 8], [9, 10], [11, 12]]
     y=[0, 0, 0, 0, 1, 1]
     splitter=MultiClassSplitter(X,y)
-    X_trains, y_trains, X_tests, y_tests=splitter.stratified_train_test( test_size=0.25, random_state=0)
-    print(X_trains, y_trains, X_tests, y_tests)
+    X_trains, y_trains, multi_label_trains, X_tests, y_tests, multi_label_tests=splitter.stratified_train_test( test_size=0.25, random_state=0)
+    print(X_trains, y_trains, multi_label_trains, X_tests, y_tests, multi_label_tests)
 
