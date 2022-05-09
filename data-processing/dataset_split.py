@@ -68,7 +68,7 @@ class MultiClassSplitter(object):
             y_folds.append(y_fold_temp)
         return X_folds, y_folds
 
-    def stratified_train_test(self, n_splits=1, *, test_size=0.1, train_size=None, random_state=None):
+    def stratified_train_test(self, n_splits=1, *, test_size=0.1, train_size=None, random_state=None,duplicate_minor=False):
         major_labels=[]
         minor_labels=[]
         for label, num in self.dict_multilabel_num.items():
@@ -77,8 +77,6 @@ class MultiClassSplitter(object):
                 minor_labels.append(label)
             else:
                 major_labels.append(label)
-        for label in minor_labels:
-            logging.warning("Dropping label {}!".format(label))
         X_list=[]
         y_list=[]
         multi_labels=[]
@@ -87,6 +85,16 @@ class MultiClassSplitter(object):
             y_list.extend(self.dict_multilabel_samples[label]["y"])
             if self.multi_labels is not None:
                 multi_labels.extend(self.dict_multilabel_samples[label]["multi_label"])
+        if duplicate_minor==True:
+            for label in minor_labels:
+                for i in range(0,2):
+                    X_list.extend(self.dict_multilabel_samples[label]["X"])
+                    y_list.extend(self.dict_multilabel_samples[label]["y"])
+                    if self.multi_labels is not None:
+                        multi_labels.extend(self.dict_multilabel_samples[label]["multi_label"])
+        else:
+            for label in minor_labels:
+                logging.warning("Dropping label {}!".format(label))
         sss = StratifiedShuffleSplit(n_splits=n_splits, test_size=test_size,train_size=train_size, random_state=random_state)
         sss.get_n_splits(X_list, y_list)
         X_trains=[]
@@ -167,6 +175,7 @@ class MultiClassSplitter(object):
         return X_folds, y_folds,multi_label_folds
 # In[]
 if __name__=="__main__":
+    print("start")
 
     X=[[1],[2],[3],[4],[5],[6],[7],[8],[9],[10]]
     y=[0,0,0,0,0,0,0,0,1,1]
@@ -183,13 +192,18 @@ if __name__=="__main__":
             [0,1,1],
             ]
     splitter=MultiClassSplitter(X,y,multi_labels=multi_labels)
-    X_folds, y_folds,multi_label_folds=splitter.stratified_k_sampling(3, drop_minority=False)
+    X_folds, y_folds=splitter.stratified_k_fold(3, drop_minority=True)
+#    X_folds, y_folds,multi_label_folds=splitter.stratified_k_sampling(3, drop_minority=False)
     print(X_folds)
+    print("-------------------")
     print(y_folds)
-    print(multi_label_folds)
+    print("-------------------")
+#    print(multi_label_folds)
+#    print("-------------------")
+    """
     X=[[1, 2], [3, 4], [5, 6], [7, 8], [9, 10], [11, 12]]
-    y=[0, 0, 0, 0, 1, 1]
+    y=[0, 0, 0, 0, 0, 1]
     splitter=MultiClassSplitter(X,y)
-    X_trains, y_trains, multi_label_trains, X_tests, y_tests, multi_label_tests=splitter.stratified_train_test( test_size=0.25, random_state=0)
-#    print(X_trains, y_trains, multi_label_trains, X_tests, y_tests, multi_label_tests)
-
+    X_trains, y_trains, multi_label_trains, X_tests, y_tests, multi_label_tests=splitter.stratified_train_test( test_size=0.25, random_state=0,duplicate_minor=True)
+    print(X_trains, y_trains, multi_label_trains, X_tests, y_tests, multi_label_tests)
+    """
