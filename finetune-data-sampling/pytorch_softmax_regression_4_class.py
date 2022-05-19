@@ -63,6 +63,7 @@ for epoch in range(epochs):
     for batch_idx,(feature_in_on_batch,label_in_one_batch) in enumerate(train_loader):
         logits=softmax_regression(feature_in_on_batch)
         loss=criterion(logits,label_in_one_batch)
+        break
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
